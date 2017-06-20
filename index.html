@@ -28,6 +28,8 @@
 	<body>
 
 <!--
+	I won't display hrefs, but keep these useful informations
+
 	learning from example codes
 
 	<div class="left">
@@ -46,6 +48,13 @@
 	3d modle from
 	https://resources.blogscopia.com/2015/04/19/birthday-cake/
 
+	<div id="info">
+	<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - MMDLoader test<br />
+	<a href="https://github.com/mrdoob/three.js/tree/master/examples/models/mmd#readme" target="_blank" rel="noopener">MMD Assets license</a><br />
+	Copyright
+	<a href="http://www.geocities.jp/higuchuu4/index_e.htm" target="_blank" rel="noopener">Model Data</a>
+	<a href="http://www.nicovideo.jp/watch/sm13147122" target="_blank" rel="noopener">Dance Data</a>
+	</div>
 -->
 
 		<script src="js/three.js"></script>
@@ -54,26 +63,48 @@
 		<script src="js/loaders/MTLLoader.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
 
-		<script src="js/OrbitControls.js"></script>
+		<script src="js/loaders/TGALoader.js"></script>
+		<script src="js/loaders/MMDLoader.js"></script>
+
+		<script src="js/controls/OrbitControls.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
+
+		<script src="js/libs/mmdparser.min.js"></script>
+		<script src="js/libs/ammo.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
+
+		<script src="js/effects/OutlineEffect.js"></script>
+		<script src="js/animation/CCDIKSolver.js"></script>
+		<script src="js/animation/MMDPhysics.js"></script>
+
+		<script src="js/controls/OrbitControls.js"></script>
+
+
+
 
 		<script>
 
 			var container, stats;
 
-			var camera, scene, renderer;
+			var mesh, camera, scene, renderer, effect;
+			var helper, ikHelper, physicsHelper;
+
 
 			var mouseX = 0, mouseY = 0;
 
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
 
+			var clock = new THREE.Clock();
 
 			init();
 			animate();
 
+			function scale100X(item, index) {
+				item.scale.x=item.scale.y=item.scale.z=100;
+			}
 
 			function init() {
 
@@ -81,7 +112,7 @@
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 1000 );
-				camera.position.z = 0.5;
+				camera.position.z = 30;
 
 				// scene
 
@@ -116,8 +147,11 @@
 					objLoader.setPath( 'assets/' );
 					objLoader.load( 'birthday_cake_triangle.obj', function ( object ) {
 
-						object.position.y = -0.05;
+
 						object.name='cake';
+						//scale model to match mmd
+						object.children.forEach(scale100X);
+						object.position.y = -8;
 						object.getChildByName('Plane').material.transparent = true;
 						scene.add( object );
 
@@ -125,11 +159,51 @@
 
 				});
 
-				//
+				//mmd model
+				var modelFile = 'models/mmd/pikachu/Pikachu.pmd';
+				var vmdFiles = [ 'models/mmd/vmds/wavefile_v2.vmd' ];
+
+				helper = new THREE.MMDHelper();
+
+				var loader = new THREE.MMDLoader();
+
+				loader.load( modelFile, vmdFiles, function ( object ) {
+
+					mesh = object;
+					mesh.position.y = 0;
+					scene.add( mesh );
+
+					helper.add( mesh );
+					helper.setAnimation( mesh );
+
+					/*
+					 * Note: create CCDIKHelper after calling helper.setAnimation()
+					 */
+					ikHelper = new THREE.CCDIKHelper( mesh );
+					ikHelper.visible = false;
+					scene.add( ikHelper );
+
+					/*
+					 * Note: You're recommended to call helper.setPhysics()
+					 *       after calling helper.setAnimation().
+			 		 */
+					helper.setPhysics( mesh );
+					physicsHelper = new THREE.MMDPhysicsHelper( mesh );
+					physicsHelper.visible = false;
+					scene.add( physicsHelper );
+
+					helper.unifyAnimationDuration( { afterglow: 2.0 } );
+
+
+				}, onProgress, onError );
+
+
+				//render
 
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setClearColor( new THREE.Color( 0xdddddd ) );
 				container.appendChild( renderer.domElement );
 
 
@@ -143,6 +217,7 @@
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
+				effect = new THREE.OutlineEffect( renderer );
 			}
 
 			function onWindowResize() {
@@ -172,9 +247,9 @@
 
 			function render() {
 
-
+				helper.animate( clock.getDelta() );
 				renderer.render( scene, camera );
-
+				//effect.render( scene, camera );
 			}
 
 		</script>
