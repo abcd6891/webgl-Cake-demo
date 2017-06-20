@@ -14,3 +14,7 @@ http://threejs.org example - OBJLoader + MTLLoader
 http://threejs.org example - MMDLoader test
 
 vmd fils from MMD load exmaple
+
+Music from youtube
+
+There is a bug, I can not use a transparent OpenGL canvas with three.js
