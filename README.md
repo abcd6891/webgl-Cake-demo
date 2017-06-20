@@ -1,4 +1,8 @@
+Wanna to send a birthday cake to my pokemon master friend.
+
+
 Cake 3d modle is downloaded from
+
 https://resources.blogscopia.com/2015/04/19/birthday-cake/
 
 I translate it to triangular meshe OBJ file with Blender,
